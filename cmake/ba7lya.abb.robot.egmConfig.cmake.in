@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+#
+# Package config for the installed ba7lya.abb.robot.egm library. It pulls in the public
+# dependencies the exported target links against, then the exported targets themselves.
+
+include(CMakeFindDependencyMacro)
+
+find_dependency(asio CONFIG REQUIRED)
+find_dependency(Protobuf REQUIRED)
+find_dependency(Threads REQUIRED)
+
+include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@Targets.cmake")
+
+check_required_components("@PROJECT_NAME@")

@@ -1,27 +1,47 @@
+# SPDX-License-Identifier: MIT
+
 # --- cmake version ---
 cmake_minimum_required(VERSION 3.21)
 
 # --- project ---
-project(ba7lya.xxxx LANGUAGES CXX)
+project(ba7lya.abb.robot.egm VERSION 0.1.0 LANGUAGES CXX)
 
 # --- build options ---
 option(${PROJECT_NAME}_BUILD_BENCHMARK "Build benchmarks"    OFF)
 option(${PROJECT_NAME}_BUILD_EXAMPLE   "Build examples"      OFF)
 option(${PROJECT_NAME}_BUILD_DOC       "Build Documentation" OFF)
 option(${PROJECT_NAME}_BUILD_TEST      "Build Test"          OFF)
+option(BUILD_SHARED_LIBS               "Build dynamically-linked binaries" ON)
 
 # --- includes ---
 include(CTest)
 include(GNUInstallDirs)
 include(GoogleTest)
+include(CMakePackageConfigHelpers)
+include(GenerateExportHeader)
 
 # --- dependencies ---
-find_package(benchmark CONFIG REQUIRED)
-find_package(GTest     CONFIG REQUIRED)
-find_package(spdlog    CONFIG REQUIRED)
+if(${PROJECT_NAME}_BUILD_BENCHMARK)
+    find_package(benchmark CONFIG REQUIRED)
+endif()
+find_package(asio    CONFIG REQUIRED)
+if(${PROJECT_NAME}_BUILD_TEST)
+    find_package(GTest CONFIG REQUIRED)
+endif()
+find_package(Protobuf REQUIRED)
+find_package(Threads  REQUIRED)
+
+# Make sure protoc is present, as apparently the above find_package() doesn't check that.
+if(NOT PROTOBUF_PROTOC_EXECUTABLE)
+    message(FATAL_ERROR "Cannot find required 'protoc', cannot process Protobuf files without it. Aborting.")
+endif()
+
+# Work around Protobuf exporting 'lpthread' as a library:
+# we let the previous find_package(...) determine the system's thread library.
+list(REMOVE_ITEM PROTOBUF_LIBRARIES "-lpthread")
 
 # --- os ---
-if (WIN32)
+if(WIN32)
     add_definitions(-DWINVER=0x0A00)       # Windows 10
     add_definitions(-D_WIN32_WINNT=0x0A00) # Windows 10
     add_definitions(-DNOMINMAX)            # disable C2589 min()/max() error
@@ -30,14 +50,115 @@ endif()
 # --- modules ---
 add_subdirectory(thirdparty)
 
+# --- protobuf ---
+# Generate C++ for protocol classes (headers and sources get written to the CMAKE_CURRENT_BINARY_DIR location).
+set(EgmProtoFiles proto/egm.proto proto/egm_wrapper.proto proto/egm_wrapper_trajectory.proto)
+message(STATUS "Generating protobuf C++ for: ${EgmProtoFiles}")
+if(MSVC)
+    # Add export macro when using Microsoft Visual C++ compiler.
+    protobuf_generate_cpp(EgmProtoSources EgmProtoHeaders EXPORT_MACRO ABB_EGM_EXPORT ${EgmProtoFiles})
+else()
+    protobuf_generate_cpp(EgmProtoSources EgmProtoHeaders ${EgmProtoFiles})
+endif()
+
 # --- target ---
-add_library(${PROJECT_NAME})
-add_library(ba7lya::xxxx ALIAS ${PROJECT_NAME})
-target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include/)
-target_sources(${PROJECT_NAME} PRIVATE src/app.cxx)
-target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog)
+set(
+    SRC_FILES
+        src/base_interface.cxx
+        src/common_auxiliary.cxx
+        src/controller_interface.cxx
+        src/interpolator.cxx
+        src/logger.cxx
+        src/trajectory_interface.cxx
+        src/udp_server.cxx
+        ${EgmProtoSources}
+)
+
+add_library(${PROJECT_NAME} ${SRC_FILES})
+add_library(ba7lya::abb::robot::egm ALIAS ${PROJECT_NAME})
+set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME egm)
+
+# The public headers live flat in include/ and include the generated protobuf headers as well as
+# the export header by bare filename, so both are generated/installed beside them.
+generate_export_header(${PROJECT_NAME} BASE_NAME abb_egm EXPORT_FILE_NAME export.hxx)
+
+target_include_directories(${PROJECT_NAME} PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include;${CMAKE_CURRENT_BINARY_DIR}>"
+    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+    ${PROTOBUF_INCLUDE_DIRS}
+)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC
+    asio::asio
+    ${PROTOBUF_LIBRARIES}
+    Threads::Threads
+)
+
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
 target_compile_options(${PROJECT_NAME} PRIVATE "$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+
+if(NOT BUILD_SHARED_LIBS)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC "ABB_EGM_STATIC_DEFINE")
+endif()
+
+if(MSVC)
+    # Force include the export header when using Microsoft Visual C++ compiler.
+    target_compile_options(${PROJECT_NAME} PUBLIC "/FI${CMAKE_CURRENT_BINARY_DIR}/export.hxx")
+    # The interface classes are not annotated with ABB_EGM_EXPORT, so a shared build would otherwise
+    # export none of them. Exporting every symbol keeps the DLL usable by tests, examples and
+    # benchmarks without annotating the whole public API.
+    set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
+
+# --- install ---
+install(
+    DIRECTORY include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(
+    FILES
+        ${EgmProtoFiles}
+        ${EgmProtoHeaders}
+        "${CMAKE_CURRENT_BINARY_DIR}/export.hxx"
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(
+    TARGETS ${PROJECT_NAME}
+    EXPORT export_${PROJECT_NAME}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+# Create the ${PROJECT_NAME}Config.cmake.
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in"
+    "${PROJECT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}Config.cmake" @ONLY
+)
+
+# Create the ${PROJECT_NAME}ConfigVersion.cmake.
+write_basic_package_version_file(
+    "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+    COMPATIBILITY AnyNewerVersion
+)
+
+install(
+    FILES
+        "${PROJECT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}Config.cmake"
+        "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}
+)
+
+# Export targets.
+install(
+    EXPORT export_${PROJECT_NAME}
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}
+    FILE ${PROJECT_NAME}Targets.cmake
+    NAMESPACE ba7lya::abb::robot::
+)
 
 # --- benchmark ---
 if(${PROJECT_NAME}_BUILD_BENCHMARK)
@@ -52,5 +173,5 @@ endif()
 # --- unit tests ---
 if(${PROJECT_NAME}_BUILD_TEST)
     enable_testing()
-    add_subdirectory(test)
+    add_subdirectory(tests)
 endif()

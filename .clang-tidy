@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: MIT
+#
+# The check groups every project of this repository ships, per the global convention.
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  concurrency-*,
+  cppcoreguidelines-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*
+
+# The suite reports; it does not gate. A whole check group can surface a large backlog at once
+# (see the identifier-naming note below), and failing the build on that backlog would block every
+# unrelated change.
+WarningsAsErrors: ''
+
+# Only this repository's own headers are ours to fix; third-party headers are never reported.
+HeaderFilterRegex: '.*/(include|src|tests|examples|benchmark)/.*'
+
+FormatStyle: file
+
+CheckOptions:
+  # The repository's naming convention: lowercase snake_case for every identifier the project
+  # declares, with a trailing underscore on C++ data members (m_lane_id_).
+  - key: readability-identifier-naming.ClassCase
+    value: lower_case
+  - key: readability-identifier-naming.StructCase
+    value: lower_case
+  - key: readability-identifier-naming.EnumCase
+    value: lower_case
+  - key: readability-identifier-naming.EnumConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.FunctionCase
+    value: lower_case
+  - key: readability-identifier-naming.MethodCase
+    value: lower_case
+  - key: readability-identifier-naming.MemberCase
+    value: lower_case
+  - key: readability-identifier-naming.MemberSuffix
+    value: _
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.TypeAliasCase
+    value: lower_case
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+  - key: readability-identifier-naming.ConstexprVariableCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: UPPER_CASE
+
+  # Trailing return types are not the style this project writes; the check is disabled rather than
+  # rewriting every signature into a form the rest of the codebase does not use.
+  - key: modernize-use-trailing-return-type
+    value: 'false'
+  # An unnamed parameter is the idiomatic way to mark an intentionally unused argument, which the
+  # nng completion callbacks rely on.
+  - key: misc-unused-parameters.StrictMode
+    value: 'false'
+  # The protocol structs expose their fields as public data members on purpose: they are plain wire
+  # records, and accessors would only restate the field name.
+  - key: misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic
+    value: 'true'
