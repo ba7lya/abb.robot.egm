@@ -362,6 +362,10 @@ void SoftRamp::update(
         start_.CopyFrom(start);
         goal_.CopyFrom(goal);
     } break;
+
+    case Operation::Normal:
+        // Normal operation is interpolated by the spline polynomials and Slerp, so the ramp stays idle.
+        break;
     }
 }
 
@@ -423,6 +427,11 @@ void SoftRamp::evaluate(
             p_p->set_values(i, p_p->values(i) + sample_time * p_v->values(i));
         }
     } break;
+
+    case Operation::Normal:
+    case Operation::RampDown:
+        // Joint space ramping only covers the two ramp-in operations; the other operations write nothing.
+        break;
     }
 }
 
@@ -543,6 +552,10 @@ void SoftRamp::evaluate(wrapper::trajectory::CartesianGoal* p_output, const doub
         p_q->set_u3(p_q->u3() + sample_time * d_q.u3());
         normalize(p_q);
     } break;
+
+    case Operation::Normal:
+        // Normal operation is interpolated by Slerp, so the Cartesian ramp stays idle.
+        break;
     }
 }
 
