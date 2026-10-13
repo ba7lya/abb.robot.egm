@@ -57,7 +57,10 @@ void UDPServer::receiveCallback(const std::error_code& error, const std::size_t 
     server_data_.p_data = receive_buffer_;
     server_data_.bytes_transferred = (int)bytes_transferred;
 
-    if (error == std::error_code() && p_interface_) {
+    // Test the error code for success rather than comparing it against a default constructed one:
+    // asio reports a successful completion through its own error category, which never compares
+    // equal to std::error_code(), so that comparison would discard every received message.
+    if (!error && p_interface_) {
         // Process the received data via the callback method (creates the reply message).
         const std::string& reply = p_interface_->callback(server_data_);
 
