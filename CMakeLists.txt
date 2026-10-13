@@ -82,6 +82,12 @@ set(
         ${EgmProtoSources}
 )
 
+# Keep every runtime artifact of a configuration in one directory, so that executables built here find
+# the shared library without any extra setup. There is no RPATH equivalent on Windows, and the loader
+# searches the executable's own directory first, so sharing that directory with the library is what
+# makes the tests, examples and benchmarks runnable straight from the build tree.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
+
 add_library(${PROJECT_NAME} ${SRC_FILES})
 add_library(ba7lya::abb::robot::egm ALIAS ${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME egm)

@@ -430,17 +430,22 @@ TEST(copyPresent, cartesianPoseDerivesTheEulerAnglesFromAQuaternionSource) {
 
 TEST(copyPresent, nestedMessagesRecurseOnlyIntoPresentFields) {
     wrapper::Robot source;
-    source.mutable_joints()->add_values(1.0);
-    source.mutable_joints()->add_values(2.0);
+    source.mutable_joints()->mutable_position()->add_values(1.0);
+    source.mutable_joints()->mutable_position()->add_values(2.0);
 
+    // The joints overload writes into the elements the target already has, so it must be sized up front.
     wrapper::Robot target;
+    target.mutable_joints()->mutable_position()->add_values(0.0);
+    target.mutable_joints()->mutable_position()->add_values(0.0);
     copyPresent(&target, source);
 
     EXPECT_TRUE(target.has_joints());
+    EXPECT_TRUE(target.joints().has_position());
+    EXPECT_FALSE(target.joints().has_velocity());
     EXPECT_FALSE(target.has_cartesian());
-    ASSERT_EQ(2, target.joints().values_size());
-    EXPECT_DOUBLE_EQ(1.0, target.joints().values(0));
-    EXPECT_DOUBLE_EQ(2.0, target.joints().values(1));
+    ASSERT_EQ(2, target.joints().position().values_size());
+    EXPECT_DOUBLE_EQ(1.0, target.joints().position().values(0));
+    EXPECT_DOUBLE_EQ(2.0, target.joints().position().values(1));
 }
 
 TEST(copyPresent, jointSpaceCopiesPositionAndVelocityIndependently) {
@@ -456,17 +461,19 @@ TEST(copyPresent, jointSpaceCopiesPositionAndVelocityIndependently) {
 
 TEST(copyPresent, outputRecursesIntoRobotAndExternal) {
     wrapper::Output source;
-    source.mutable_robot()->mutable_joints()->add_values(1.0);
-    source.mutable_external()->mutable_joints()->add_values(2.0);
+    source.mutable_robot()->mutable_joints()->mutable_position()->add_values(1.0);
+    source.mutable_external()->mutable_joints()->mutable_position()->add_values(2.0);
 
     wrapper::Output target;
+    target.mutable_robot()->mutable_joints()->mutable_position()->add_values(0.0);
+    target.mutable_external()->mutable_joints()->mutable_position()->add_values(0.0);
     copyPresent(&target, source);
 
     EXPECT_TRUE(target.has_robot());
     EXPECT_TRUE(target.has_external());
-    ASSERT_EQ(1, target.robot().joints().values_size());
-    EXPECT_DOUBLE_EQ(1.0, target.robot().joints().values(0));
-    EXPECT_DOUBLE_EQ(2.0, target.external().joints().values(0));
+    ASSERT_EQ(1, target.robot().joints().position().values_size());
+    EXPECT_DOUBLE_EQ(1.0, target.robot().joints().position().values(0));
+    EXPECT_DOUBLE_EQ(2.0, target.external().joints().position().values(0));
 }
 
 TEST(copyPresent, toleratesNullTargets) {
