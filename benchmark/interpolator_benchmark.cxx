@@ -82,13 +82,20 @@ void splinePolynomialUpdate(benchmark::State& state) {
     const wrapper::trajectory::JointGoal start = makeJointGoal(0.0, 0.0, 0.0);
     const wrapper::trajectory::JointGoal goal = makeJointGoal(90.0, 0.0, 0.0);
 
+    wrapper::trajectory::JointGoal output = makeJointGoal(0.0, 0.0, 0.0);
+
     for (auto _ : state) {
         SplineConditions spline_conditions(conditions);
         for (int i = 0; i < NUMBER_OF_JOINTS; ++i) { spline_conditions.setConditions(i, start, goal); }
 
         SplinePolynomial polynomial;
         polynomial.update(spline_conditions);
-        benchmark::DoNotOptimize(polynomial);
+
+        // The polynomial is consumed through its evaluation. DoNotOptimize can only name the scalar
+        // register or memory operands its inline asm accepts, never a class object, so reading the
+        // coefficients back is what keeps the update itself from being optimized away.
+        polynomial.evaluate(&output, 0, 0.25);
+        benchmark::DoNotOptimize(output);
     }
 }
 
@@ -182,10 +189,16 @@ void interpolatorUpdate(benchmark::State& state) {
     const wrapper::trajectory::PointGoal start = makePointGoal(0.0, 0.0, 0.0);
     const wrapper::trajectory::PointGoal goal = makePointGoal(90.0, 0.0, 0.0);
 
+    wrapper::trajectory::PointGoal output = makePointGoal(0.0, 0.0, 0.0);
+
     for (auto _ : state) {
         EGMInterpolator interpolator;
         interpolator.update(start, goal, conditions);
-        benchmark::DoNotOptimize(interpolator);
+
+        // See splinePolynomialUpdate: a class object cannot be handed to DoNotOptimize, so the
+        // interpolator is consumed through a single evaluation instead.
+        interpolator.evaluate(&output, LOWEST_SAMPLE_TIME, 0.25);
+        benchmark::DoNotOptimize(output);
     }
 }
 

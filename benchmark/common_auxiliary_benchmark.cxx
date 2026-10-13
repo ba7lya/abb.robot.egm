@@ -133,7 +133,10 @@ void multiplyQuaternions(benchmark::State& state) {
 
     for (auto _ : state) {
         const wrapper::Quaternion product = multiply(q1, q2);
-        benchmark::DoNotOptimize(product);
+
+        // A quaternion cannot be handed to DoNotOptimize, which accepts scalar operands only, so one
+        // component is read back instead. The multiply itself lives in another translation unit.
+        benchmark::DoNotOptimize(product.u0());
     }
 }
 
