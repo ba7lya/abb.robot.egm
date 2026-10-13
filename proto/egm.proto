@@ -55,8 +55,7 @@ message EgmClock {
     required uint64 usec = 2;
 }
 
-// Pose
-// (i.e. cartesian position and Quaternion orientation) relative to the correction frame defined by EGMActPose
+// Pose (i.e. cartesian position and Quaternion orientation) relative to the correction frame defined by EGMActPose
 message EgmPose {
     optional EgmCartesian pos = 1;
     optional EgmQuaternion orient = 2;
