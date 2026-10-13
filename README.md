@@ -76,3 +76,7 @@ See the Add-In's user manual ([1.0](https://robotapps.blob.core.windows.net/appr
 #### Notes
 
 If the EGM option is selected during system installation, then the Add-In will load RAPID code for using `EGMRunJoint` and `EGMRunPose` RAPID instructions. System configurations will also be loaded, and it is important to update the robot controller's EGM configurations. Especially the *Remote Address* and *Remote Port Number* configurations, under the *Transmission Protocol* topic, are vital to edit so that the robot controller will send EGM messages to the correct host address. This configuration can be found in RobotStudio -> Controller tab -> Configuration -> Communication -> Transmission Protocol -> Edit each `ROB_X` instance. There will be one instance for each robot in the system.
+
+# References
+
+[1] [Externally Guided Motion - Application manual - RobotWare 8.0](https://library.e.abb.com/public/e7938c068b3742a7aead2dc6cbf64cd7/3HAC073318%20AM%20Externally%20Guided%20Motion%20OmniCore-en.pdf)
