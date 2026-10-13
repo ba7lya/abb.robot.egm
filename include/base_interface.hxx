@@ -191,7 +191,7 @@ struct SessionData {
     wrapper::Status status;
 
     /// @brief Mutex for protecting the session data.
-    std::mutex mutex;
+    mutable std::mutex mutex;
 };
 
 ///
@@ -215,14 +215,14 @@ struct BaseConfigurationContainer {
     bool has_pending_update;
 
     /// @brief Mutex for protecting the configuration.
-    std::mutex mutex;
+    mutable std::mutex mutex;
 };
 
 ///
 /// @brief Class for processing asynchronous callbacks.
 /// @note The class provides behavior for:
-/// - Processing asynchronous callbacks from a UDP server. The interface receives the robot controller's
-///   outbound messages and construct inbound messages to the robot controller.
+/// - Processing asynchronous callbacks from a UDP server. The interface receives the robot controller's outbound
+///   messages and construct inbound messages to the robot controller.
 /// - This class can for example be used as a foundation for custom made user interfaces.
 ///
 class EGMBaseInterface : public AbstractUDPServerInterface {

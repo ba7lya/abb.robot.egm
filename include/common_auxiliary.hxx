@@ -17,52 +17,70 @@
 
 namespace ba7lya::abb::robot::egm {
 
+///
 /// @brief Saturate a specified value between a lower and a upper bound.
 /// @param value for the value to saturate.
 /// @param lower for the lower bound.
 /// @param upper for the upper bound.
 /// @return double with the saturated value.
+///
 double saturate(const double value, const double lower, const double upper);
 
+///
 /// @brief Multiply all values in a joints object with a factor.
 /// @param p_j for the joints object.
 /// @param factor for the value to multiply with.
+///
 void multiply(wrapper::Joints* p_j, const double factor);
 
+///
 /// @brief Multiply all values in a Cartesian object with a factor.
 /// @param p_c for the Cartesian object.
 /// @param factor for the value to multiply with.
+///
 void multiply(wrapper::Cartesian* p_c, const double factor);
 
+///
 /// @brief Multiply all values in an Euler object with a factor.
 /// @param p_e for the Euler object.
 /// @param factor for the value to multiply with.
+///
 void multiply(wrapper::Euler* p_e, const double factor);
 
+///
 /// @brief Multiply all values in a quaternion object with a factor.
 /// @param p_q for the quaternion object.
 /// @param factor for the value to multiply with.
+///
 void multiply(wrapper::Quaternion* p_q, const double factor);
 
+///
 /// @brief Multiply two quaternions together.
 /// @param q1 for the first quaternion.
 /// @param q2 for the second quaternion.
 /// @return Quaternion containing the result.
+///
 wrapper::Quaternion multiply(const wrapper::Quaternion& q1, const wrapper::Quaternion& q2);
 
+///
 /// @brief Calculate the dot product between two quaternions.
 /// @param q1 for the first quaternion.
 /// @param q2 for the second quaternion.
 /// @return double containing the dot product value.
+///
 double dotProduct(const wrapper::Quaternion& q1, const wrapper::Quaternion& q2);
 
+///
 /// @brief Calculate the Euclidean norm of a quaternion.
 /// @param q for the quaternion to calculate the norm of.
 /// @return double containing the Euclidean norm value.
+///
 double euclideanNorm(const wrapper::Quaternion& q);
 
+///
 /// @brief Normalize a quaternion.
 /// @param p_q for the quaternion to normalize.
+///
 void normalize(wrapper::Quaternion* p_q);
 
 /// @brief Convert ZYX Euler angles to a quaternion.
