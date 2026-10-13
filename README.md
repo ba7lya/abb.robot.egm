@@ -1,6 +1,7 @@
 # ba7lya.abb.robot.egm
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![ci](https://github.com/ba7lya/abb.robot.egm/actions/workflows/ci.yml/badge.svg)](https://github.com/ba7lya/abb.robot.egm/actions/workflows/ci.yml)
 
 ## Overview
 
