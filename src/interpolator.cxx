@@ -398,7 +398,7 @@ void SoftRamp::evaluate(
             p_v->set_values(i, d_ramp_factor * (goal_rj.values(i) - start_rj.values(i)));
             p_a->set_values(i, 0.0);
         }
-    }
+    } break;
 
     case Operation::RampInVelocity: {
         // Ramp factor that goes from 0.0 to 1.0.
@@ -498,7 +498,7 @@ void SoftRamp::evaluate(wrapper::trajectory::CartesianGoal* p_output, const doub
         normalize(p_q);
 
         estimateVelocities(p_av, *p_q, previous_q, sample_time);
-    }
+    } break;
 
     case Operation::RampInVelocity: {
         // Output to set. Note: The Euler field is internally used to contain angular velocities.
