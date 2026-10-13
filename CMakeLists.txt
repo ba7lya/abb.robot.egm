@@ -36,10 +36,6 @@ if(NOT PROTOBUF_PROTOC_EXECUTABLE)
     message(FATAL_ERROR "Cannot find required 'protoc', cannot process Protobuf files without it. Aborting.")
 endif()
 
-# Work around Protobuf exporting 'lpthread' as a library:
-# we let the previous find_package(...) determine the system's thread library.
-list(REMOVE_ITEM PROTOBUF_LIBRARIES "-lpthread")
-
 # --- os ---
 if(WIN32)
     add_definitions(-DWINVER=0x0A00)       # Windows 10
@@ -78,19 +74,20 @@ add_library(${PROJECT_NAME} ${SRC_FILES})
 add_library(ba7lya::abb::robot::egm ALIAS ${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME egm)
 
-# The public headers live flat in include/ and include the generated protobuf headers as well as
-# the export header by bare filename, so both are generated/installed beside them.
+# The public headers live under include/ba7lya/abb/robot/egm/ and include the generated protobuf headers as well
+# as the export header by bare filename, so those are generated/installed alongside them.
 generate_export_header(${PROJECT_NAME} BASE_NAME abb_egm EXPORT_FILE_NAME export.hxx)
 
+# Only the build directory is needed for the generated protobuf headers and the export header; protobuf's own
+# include directory is inherited from the imported target below, so it never leaks into the installed package.
 target_include_directories(${PROJECT_NAME} PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include;${CMAKE_CURRENT_BINARY_DIR}>"
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
-    ${PROTOBUF_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
     asio::asio
-    ${PROTOBUF_LIBRARIES}
+    protobuf::libprotobuf
     Threads::Threads
 )
 

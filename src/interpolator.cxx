@@ -10,11 +10,11 @@
 
 #define _USE_MATH_DEFINES
 
-#include "interpolator.hxx"
+#include "ba7lya/abb/robot/egm/interpolator.hxx"
 
 #include <cmath>
 
-#include "common_auxiliary.hxx"
+#include "ba7lya/abb/robot/egm/common_auxiliary.hxx"
 
 namespace ba7lya::abb::robot::egm {
 
@@ -105,7 +105,7 @@ void SplinePolynomial::update(const SplineConditions& conditions) {
     }
     else {
         switch (conditions.spline_method) {
-        case TrajectoryConfiguration::Linear: {
+        case Linear: {
             //---------------------------------------------------------------
             // Calculate the spline polynomial coefficients for:
             // S(t) = A + B*t
@@ -126,7 +126,7 @@ void SplinePolynomial::update(const SplineConditions& conditions) {
             f_ = 0.0;
         } break;
 
-        case TrajectoryConfiguration::Square: {
+        case Square: {
             //---------------------------------------------------------------
             // Calculate the spline polynomial coefficients for:
             // S(t) = A + B*t + C*t^2
@@ -149,7 +149,7 @@ void SplinePolynomial::update(const SplineConditions& conditions) {
             f_ = 0.0;
         } break;
 
-        case TrajectoryConfiguration::Cubic: {
+        case Cubic: {
             //---------------------------------------------------------------
             // Calculate the spline polynomial coefficients for:
             // S(t) = A + B*t + C*t^2 + D*t^3
@@ -177,7 +177,7 @@ void SplinePolynomial::update(const SplineConditions& conditions) {
             f_ = 0.0;
         } break;
 
-        case TrajectoryConfiguration::Quintic: {
+        case Quintic: {
             //---------------------------------------------------------------
             // Calculate the spline polynomial coefficients for:
             // S(t) = A + B*t + C*t^2 + D*t^3 + E*t^4 + F*t^5

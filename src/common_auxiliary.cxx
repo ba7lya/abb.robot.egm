@@ -10,7 +10,7 @@
 
 #define _USE_MATH_DEFINES
 
-#include "common_auxiliary.hxx"
+#include "ba7lya/abb/robot/egm/common_auxiliary.hxx"
 
 #include <cmath>
 #include <complex>

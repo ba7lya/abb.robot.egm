@@ -8,7 +8,7 @@
 /// @copyright Copyright (c) 2026
 ///
 
-#include "udp_server.hxx"
+#include "ba7lya/abb/robot/egm/udp_server.hxx"
 
 #include <functional>
 
@@ -48,7 +48,7 @@ void UDPServer::startAsynchronousReceive() {
     if (p_socket_) {
         p_socket_->async_receive_from(
             asio::buffer(receive_buffer_), remote_endpoint_,
-            std::bind(&UDPServer::receiveCallback, this, std::placeholders::error, std::placeholders::bytes_transferred)
+            std::bind(&UDPServer::receiveCallback, this, std::placeholders::_1, std::placeholders::_2)
         );
     }
 }
@@ -65,9 +65,7 @@ void UDPServer::receiveCallback(const std::error_code& error, const std::size_t 
             // Send the response message to the robot controller.
             p_socket_->async_send_to(
                 asio::buffer(reply), remote_endpoint_,
-                std::bind(
-                    &UDPServer::sendCallback, this, std::placeholders::error, std::placeholders::bytes_transferred
-                )
+                std::bind(&UDPServer::sendCallback, this, std::placeholders::_1, std::placeholders::_2)
             );
         }
     }

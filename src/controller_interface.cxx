@@ -8,18 +8,18 @@
 /// @copyright Copyright (c) 2026
 ///
 
-#include "controller_interface.hxx"
+#include "ba7lya/abb/robot/egm/controller_interface.hxx"
 
 #include <sstream>
 
-#include "common_auxiliary.hxx"
+#include "ba7lya/abb/robot/egm/common_auxiliary.hxx"
 
 namespace ba7lya::abb::robot::egm {
 
 // See https://stackoverflow.com/questions/16957458/static-const-in-c-class-undefined-reference/16957554
-const unsigned int EGMControllerInterface::ControllerMotion::WRITE_TIMEOUT_MS;
+const unsigned int ControllerMotion::WRITE_TIMEOUT_MS;
 
-void EGMControllerInterface::ControllerMotion::initialize(const bool first_message) {
+void ControllerMotion::initialize(const bool first_message) {
     if (first_message) {
         std::lock_guard<std::mutex> lock(read_mutex_);
         std::lock_guard<std::mutex> lock2(write_mutex_);
@@ -29,7 +29,7 @@ void EGMControllerInterface::ControllerMotion::initialize(const bool first_messa
     }
 }
 
-void EGMControllerInterface::ControllerMotion::writeInputs(const wrapper::Input& inputs) {
+void ControllerMotion::writeInputs(const wrapper::Input& inputs) {
     std::lock_guard<std::mutex> lock(read_mutex_);
 
     inputs_.CopyFrom(inputs);
@@ -38,7 +38,7 @@ void EGMControllerInterface::ControllerMotion::writeInputs(const wrapper::Input&
     read_condition_variable_.notify_all();
 }
 
-void EGMControllerInterface::ControllerMotion::readOutputs(wrapper::Output* p_outputs) {
+void ControllerMotion::readOutputs(wrapper::Output* p_outputs) {
     bool timed_out = false;
 
     std::unique_lock<std::mutex> lock(write_mutex_);
@@ -55,7 +55,7 @@ void EGMControllerInterface::ControllerMotion::readOutputs(wrapper::Output* p_ou
     }
 }
 
-bool EGMControllerInterface::ControllerMotion::waitForMessage(const unsigned int timeout_ms) {
+bool ControllerMotion::waitForMessage(const unsigned int timeout_ms) {
     std::unique_lock<std::mutex> lock(read_mutex_);
 
     bool timed_out = false;
@@ -72,14 +72,14 @@ bool EGMControllerInterface::ControllerMotion::waitForMessage(const unsigned int
     return !timed_out;
 }
 
-void EGMControllerInterface::ControllerMotion::readInputs(wrapper::Input* p_inputs) {
+void ControllerMotion::readInputs(wrapper::Input* p_inputs) {
     std::lock_guard<std::mutex> lock(read_mutex_);
 
     p_inputs->CopyFrom(inputs_);
     read_data_ready_ = false;
 }
 
-void EGMControllerInterface::ControllerMotion::writeOutputs(const wrapper::Output& outputs) {
+void ControllerMotion::writeOutputs(const wrapper::Output& outputs) {
     std::lock_guard<std::mutex> lock(write_mutex_);
 
     outputs_.CopyFrom(outputs);

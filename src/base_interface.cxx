@@ -10,12 +10,12 @@
 
 #define _USE_MATH_DEFINES
 
-#include "base_interface.hxx"
+#include "ba7lya/abb/robot/egm/base_interface.hxx"
 
 #include <cmath>
 #include <sstream>
 
-#include "common_auxiliary.hxx"
+#include "ba7lya/abb/robot/egm/common_auxiliary.hxx"
 
 namespace ba7lya::abb::robot::egm {
 
@@ -599,7 +599,7 @@ bool OutputContainer::constructCartesianBody(const BaseConfiguration& configurat
 }
 
 // See https://stackoverflow.com/questions/16957458/static-const-in-c-class-undefined-reference/16957554
-constexpr uint16_t WAIT_TIME_MS;
+const unsigned int EGMBaseInterface::WAIT_TIME_MS;
 
 EGMBaseInterface::EGMBaseInterface(
     asio::io_context& io_service, const unsigned short port_number, const BaseConfiguration& configuration

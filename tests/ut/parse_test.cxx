@@ -9,11 +9,10 @@
 ///
 
 #include <cmath>
-
 #include <gtest/gtest.h>
 
-#include "common.hxx"
-#include "common_auxiliary.hxx"
+#include "ba7lya/abb/robot/egm/common.hxx"
+#include "ba7lya/abb/robot/egm/common_auxiliary.hxx"
 #include "egm.pb.h"
 #include "egm_wrapper.pb.h"
 
@@ -23,7 +22,9 @@ using namespace ba7lya::abb::robot::egm;
 
 constexpr double TOLERANCE = 1e-9;
 
-EgmHeader makeHeader(const std::uint32_t sequence_number, const std::uint32_t time_stamp, const EgmHeader::MessageType type) {
+EgmHeader makeHeader(
+    const std::uint32_t sequence_number, const std::uint32_t time_stamp, const EgmHeader::MessageType type
+) {
     EgmHeader header;
     header.set_seqno(sequence_number);
     header.set_tm(time_stamp);
@@ -137,9 +138,7 @@ TEST(parseStatus, mapsTheRemainingStates) {
 
     EXPECT_TRUE(parse(
         &target,
-        makeRobotStatus(
-            EgmMotorState::MOTORS_OFF, EgmMCIState::MCI_ERROR, EgmRapidCtrlExecState::RAPID_STOPPED, false
-        )
+        makeRobotStatus(EgmMotorState::MOTORS_OFF, EgmMCIState::MCI_ERROR, EgmRapidCtrlExecState::RAPID_STOPPED, false)
     ));
     EXPECT_EQ(wrapper::Status::MOTORS_OFF, target.motor_state());
     EXPECT_EQ(wrapper::Status::EGM_ERROR, target.egm_state());
@@ -157,10 +156,9 @@ TEST(parseStatus, mapsTheRemainingStates) {
     EXPECT_EQ(wrapper::Status::RAPID_UNDEFINED, target.rapid_execution_state());
 
     EXPECT_TRUE(parse(
-        &target,
-        makeRobotStatus(
-            EgmMotorState::MOTORS_ON, EgmMCIState::MCI_UNDEFINED, EgmRapidCtrlExecState::RAPID_RUNNING, true
-        )
+        &target, makeRobotStatus(
+                     EgmMotorState::MOTORS_ON, EgmMCIState::MCI_UNDEFINED, EgmRapidCtrlExecState::RAPID_RUNNING, true
+                 )
     ));
     EXPECT_EQ(wrapper::Status::EGM_UNDEFINED, target.egm_state());
 }
@@ -214,15 +212,13 @@ TEST(parseClock, copiesBothFields) {
     EXPECT_EQ(5678u, target.usec());
 }
 
-TEST(parseClock, nullTargetIsRejected) {
-    EXPECT_FALSE(parse(static_cast<wrapper::Clock*>(nullptr), makeClock(1, 2)));
-}
+TEST(parseClock, nullTargetIsRejected) { EXPECT_FALSE(parse(static_cast<wrapper::Clock*>(nullptr), makeClock(1, 2))); }
 
 // --- parse(wrapper::Joints*, wrapper::Joints*, const EgmJoints&, const EgmJoints&, RobotAxes) ---
 
 TEST(parseJoints, noneAxesCopiesOnlyTheExternalJoints) {
     const EgmJoints robot = makeEgmJoints({});
-    const EgmJoints external = makeEgmJoints({1.0, 2.0});
+    const EgmJoints external = makeEgmJoints({ 1.0, 2.0 });
 
     wrapper::Joints target_robot;
     wrapper::Joints target_external;
@@ -235,7 +231,7 @@ TEST(parseJoints, noneAxesCopiesOnlyTheExternalJoints) {
 }
 
 TEST(parseJoints, noneAxesRejectsRobotJoints) {
-    const EgmJoints robot = makeEgmJoints({1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+    const EgmJoints robot = makeEgmJoints({ 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 });
     const EgmJoints external = makeEgmJoints({});
 
     wrapper::Joints target_robot;
@@ -244,8 +240,8 @@ TEST(parseJoints, noneAxesRejectsRobotJoints) {
 }
 
 TEST(parseJoints, sixAxesCopiesRobotAndExternalSeparately) {
-    const EgmJoints robot = makeEgmJoints({1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
-    const EgmJoints external = makeEgmJoints({7.0, 8.0});
+    const EgmJoints robot = makeEgmJoints({ 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 });
+    const EgmJoints external = makeEgmJoints({ 7.0, 8.0 });
 
     wrapper::Joints target_robot;
     wrapper::Joints target_external;
@@ -264,12 +260,12 @@ TEST(parseJoints, sixAxesRequiresExactlySixRobotJoints) {
     wrapper::Joints target_robot;
     wrapper::Joints target_external;
 
-    EXPECT_FALSE(parse(&target_robot, &target_external, makeEgmJoints({1.0, 2.0}), makeEgmJoints({}), Six));
+    EXPECT_FALSE(parse(&target_robot, &target_external, makeEgmJoints({ 1.0, 2.0 }), makeEgmJoints({}), Six));
 }
 
 TEST(parseJoints, sevenAxesReordersTheFirstExternalJointIntoTheRobot) {
-    const EgmJoints robot = makeEgmJoints({1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
-    const EgmJoints external = makeEgmJoints({9.0, 10.0});
+    const EgmJoints robot = makeEgmJoints({ 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 });
+    const EgmJoints external = makeEgmJoints({ 9.0, 10.0 });
 
     wrapper::Joints target_robot;
     wrapper::Joints target_external;
@@ -293,12 +289,12 @@ TEST(parseJoints, sevenAxesRequiresAtLeastOneExternalJoint) {
     wrapper::Joints target_external;
 
     EXPECT_FALSE(parse(
-        &target_robot, &target_external, makeEgmJoints({1.0, 2.0, 3.0, 4.0, 5.0, 6.0}), makeEgmJoints({}), Seven
+        &target_robot, &target_external, makeEgmJoints({ 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 }), makeEgmJoints({}), Seven
     ));
 }
 
 TEST(parseJoints, targetsAreClearedBeforeParsing) {
-    const EgmJoints robot = makeEgmJoints({1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+    const EgmJoints robot = makeEgmJoints({ 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 });
     const EgmJoints external = makeEgmJoints({});
 
     wrapper::Joints target_robot;
@@ -312,7 +308,7 @@ TEST(parseJoints, targetsAreClearedBeforeParsing) {
 }
 
 TEST(parseJoints, nullTargetsAreRejected) {
-    const EgmJoints robot = makeEgmJoints({1.0, 2.0, 3.0, 4.0, 5.0, 6.0});
+    const EgmJoints robot = makeEgmJoints({ 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 });
     const EgmJoints external = makeEgmJoints({});
 
     wrapper::Joints target;
@@ -387,7 +383,9 @@ TEST(parsePose, aMissingOrientationIsRejected) {
 
 // --- parse(wrapper::Feedback* / wrapper::Planned*, ...) ---
 
-EgmFeedBack makeFeedback(const std::initializer_list<double> robot_joints, const std::initializer_list<double> external_joints) {
+EgmFeedBack makeFeedback(
+    const std::initializer_list<double> robot_joints, const std::initializer_list<double> external_joints
+) {
     EgmFeedBack feedback;
     for (const double value : robot_joints) { feedback.mutable_joints()->add_joints(value); }
     for (const double value : external_joints) { feedback.mutable_externaljoints()->add_joints(value); }
@@ -397,7 +395,9 @@ EgmFeedBack makeFeedback(const std::initializer_list<double> robot_joints, const
     return feedback;
 }
 
-EgmPlanned makePlanned(const std::initializer_list<double> robot_joints, const std::initializer_list<double> external_joints) {
+EgmPlanned makePlanned(
+    const std::initializer_list<double> robot_joints, const std::initializer_list<double> external_joints
+) {
     EgmPlanned planned;
     for (const double value : robot_joints) { planned.mutable_joints()->add_joints(value); }
     for (const double value : external_joints) { planned.mutable_externaljoints()->add_joints(value); }
@@ -408,7 +408,7 @@ EgmPlanned makePlanned(const std::initializer_list<double> robot_joints, const s
 }
 
 TEST(parseFeedback, sixAxesWithoutCartesianDataSucceeds) {
-    const EgmFeedBack source = makeFeedback({1.0, 2.0, 3.0, 4.0, 5.0, 6.0}, {7.0});
+    const EgmFeedBack source = makeFeedback({ 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 }, { 7.0 });
 
     wrapper::Feedback target;
     EXPECT_TRUE(parse(&target, source, Six));
@@ -422,7 +422,7 @@ TEST(parseFeedback, sixAxesWithoutCartesianDataSucceeds) {
 }
 
 TEST(parseFeedback, sixAxesWithCartesianDataParsesThePose) {
-    EgmFeedBack source = makeFeedback({1.0, 2.0, 3.0, 4.0, 5.0, 6.0}, {});
+    EgmFeedBack source = makeFeedback({ 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 }, {});
     source.mutable_cartesian()->mutable_pos()->set_x(0.5);
     source.mutable_cartesian()->mutable_pos()->set_y(1.5);
     source.mutable_cartesian()->mutable_pos()->set_z(2.5);
@@ -439,12 +439,12 @@ TEST(parseFeedback, sixAxesWithCartesianDataParsesThePose) {
 }
 
 TEST(parseFeedback, noneAxesRejectsAnyCartesianData) {
-    const EgmFeedBack source = makeFeedback({}, {1.0, 2.0});
+    const EgmFeedBack source = makeFeedback({}, { 1.0, 2.0 });
 
     wrapper::Feedback target;
     EXPECT_TRUE(parse(&target, source, None));
 
-    EgmFeedBack with_cartesian = makeFeedback({}, {1.0});
+    EgmFeedBack with_cartesian = makeFeedback({}, { 1.0 });
     with_cartesian.mutable_cartesian()->mutable_pos()->set_x(0.0);
     with_cartesian.mutable_cartesian()->mutable_pos()->set_y(0.0);
     with_cartesian.mutable_cartesian()->mutable_pos()->set_z(0.0);
@@ -458,7 +458,7 @@ TEST(parseFeedback, noneAxesRejectsAnyCartesianData) {
 }
 
 TEST(parseFeedback, aMalformedJointCountFailsBeforeAnyCartesianParsing) {
-    const EgmFeedBack source = makeFeedback({1.0, 2.0}, {});
+    const EgmFeedBack source = makeFeedback({ 1.0, 2.0 }, {});
 
     wrapper::Feedback target;
     EXPECT_FALSE(parse(&target, source, Six));
@@ -469,7 +469,7 @@ TEST(parseFeedback, nullTargetIsRejected) {
 }
 
 TEST(parsePlanned, sixAxesWithoutCartesianDataSucceeds) {
-    const EgmPlanned source = makePlanned({1.0, 2.0, 3.0, 4.0, 5.0, 6.0}, {});
+    const EgmPlanned source = makePlanned({ 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 }, {});
 
     wrapper::Planned target;
     EXPECT_TRUE(parse(&target, source, Six));
@@ -480,7 +480,7 @@ TEST(parsePlanned, sixAxesWithoutCartesianDataSucceeds) {
 }
 
 TEST(parsePlanned, noneAxesRejectsAnyCartesianData) {
-    EgmPlanned source = makePlanned({}, {1.0});
+    EgmPlanned source = makePlanned({}, { 1.0 });
     source.mutable_cartesian()->mutable_pos()->set_x(0.0);
     source.mutable_cartesian()->mutable_pos()->set_y(0.0);
     source.mutable_cartesian()->mutable_pos()->set_z(0.0);

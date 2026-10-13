@@ -10,12 +10,12 @@
 
 #define _USE_MATH_DEFINES
 
-#include "trajectory_interface.hxx"
+#include "ba7lya/abb/robot/egm/trajectory_interface.hxx"
 
 #include <math.h>
 #include <sstream>
 
-#include "common_auxiliary.hxx"
+#include "ba7lya/abb/robot/egm/common_auxiliary.hxx"
 
 namespace ba7lya::abb::robot::egm {
 
@@ -28,31 +28,35 @@ void StateManager::setPendingState(const States& desired_state, const SubStates&
     switch (current_state_) {
     case Normal: {
         switch (current_sub_state_) {
-        case None:     break; // Should never occur.
-        case Running:  accepted = (desired_state == RampDown && desired_sub_state == None); break;
-        case Finished: break; // Should never occur.
+        case SubStates::None:     break; // Should never occur.
+        case SubStates::Running:  accepted = (desired_state == RampDown && desired_sub_state == SubStates::None); break;
+        case SubStates::Finished: break; // Should never occur.
         }
     } break;
 
     case RampDown: {
         switch (current_sub_state_) {
-        case None:    accepted = (desired_state == RampDown && desired_sub_state == Running); break;
-        case Running: accepted = (desired_state == RampDown && desired_sub_state == Finished); break;
-        case Finished:
-            accepted = (desired_state == Normal && desired_sub_state == Running)
-                    || (desired_state == StaticGoal && desired_sub_state == None);
+        case SubStates::None: accepted = (desired_state == RampDown && desired_sub_state == SubStates::Running); break;
+        case SubStates::Running:
+            accepted = (desired_state == RampDown && desired_sub_state == SubStates::Finished);
+            break;
+        case SubStates::Finished:
+            accepted = (desired_state == Normal && desired_sub_state == SubStates::Running)
+                    || (desired_state == StaticGoal && desired_sub_state == SubStates::None);
             break;
         }
     } break;
 
     case StaticGoal: {
         switch (current_sub_state_) {
-        case None: accepted = (desired_state == StaticGoal && desired_sub_state == Running); break;
-        case Running:
-            accepted = (desired_state == StaticGoal && desired_sub_state == Finished)
-                    || (desired_state == RampDown && desired_sub_state == None);
+        case SubStates::None:
+            accepted = (desired_state == StaticGoal && desired_sub_state == SubStates::Running);
             break;
-        case Finished: accepted = (desired_state == RampDown && desired_sub_state == None); break;
+        case SubStates::Running:
+            accepted = (desired_state == StaticGoal && desired_sub_state == SubStates::Finished)
+                    || (desired_state == RampDown && desired_sub_state == SubStates::None);
+            break;
+        case SubStates::Finished: accepted = (desired_state == RampDown && desired_sub_state == SubStates::None); break;
         }
     } break;
     }
@@ -75,10 +79,10 @@ wrapper::trajectory::ExecutionProgress_State StateManager::mapState() {
 
 wrapper::trajectory::ExecutionProgress_SubState StateManager::mapSubState() {
     switch (current_sub_state_) {
-    case None:     return wrapper::trajectory::ExecutionProgress_SubState_NONE; break;
-    case Running:  return wrapper::trajectory::ExecutionProgress_SubState_RUNNING; break;
-    case Finished: return wrapper::trajectory::ExecutionProgress_SubState_FINISHED; break;
-    default:       return wrapper::trajectory::ExecutionProgress_SubState_NONE;
+    case SubStates::None:     return wrapper::trajectory::ExecutionProgress_SubState_NONE; break;
+    case SubStates::Running:  return wrapper::trajectory::ExecutionProgress_SubState_RUNNING; break;
+    case SubStates::Finished: return wrapper::trajectory::ExecutionProgress_SubState_FINISHED; break;
+    default:                  return wrapper::trajectory::ExecutionProgress_SubState_NONE;
     }
 }
 
@@ -413,7 +417,7 @@ void Controller::update(
     const States state, const MotionStep& motion_step, const TrajectoryConfiguration& configurations
 ) {
     is_normal_state_ = (state == Normal);
-    is_linear_ = (configurations.spline_method == TrajectoryConfiguration::Linear);
+    is_linear_ = (configurations.spline_method == Linear);
 
     egm_mode_ = motion_step.data.mode;
     initial_references_.CopyFrom(motion_step.interpolation);
@@ -661,10 +665,10 @@ void TrajectoryMotion::prepare(const InputContainer& inputs) {
     // Activate the state manager if a new EGM session's states are ok. Otherwise,
     // reset the internal components if an active EGM session's states has become not ok.
     if (inputs.statesOk()) {
-        if (state_manager_.verifyState(Normal, None)) { state_manager_.activateStateManager(); }
+        if (state_manager_.verifyState(Normal, SubStates::None)) { state_manager_.activateStateManager(); }
     }
     else {
-        if (!state_manager_.verifyState(Normal, None)) {
+        if (!state_manager_.verifyState(Normal, SubStates::None)) {
             resetTrajectoryMotion();
             motion_step_.resetMotionStep();
             state_manager_.resetStateManager();
@@ -693,12 +697,12 @@ void TrajectoryMotion::resetTrajectoryMotion() {
 
 void TrajectoryMotion::processNormalState() {
     switch (state_manager_.getSubState()) {
-    case None:
+    case SubStates::None:
         // Should never occur.
         break;
 
-    case Running: {
-        if (data_.pending_events.do_ramp_down) { state_manager_.setPendingState(RampDown, None); }
+    case SubStates::Running: {
+        if (data_.pending_events.do_ramp_down) { state_manager_.setPendingState(RampDown, SubStates::None); }
         else {
             if (trajectories_.p_current) {
                 if (motion_step_.interpolationDurationReached()) {
@@ -718,7 +722,7 @@ void TrajectoryMotion::processNormalState() {
         }
     } break;
 
-    case Finished:
+    case SubStates::Finished:
         // Should never occur.
         break;
     }
@@ -726,7 +730,7 @@ void TrajectoryMotion::processNormalState() {
 
 void TrajectoryMotion::processRampDownState() {
     switch (state_manager_.getSubState()) {
-    case None: {
+    case SubStates::None: {
         motion_step_.prepareRampDownGoal(data_.pending_events.do_stop);
 
         // Store any active goal.
@@ -734,14 +738,16 @@ void TrajectoryMotion::processRampDownState() {
 
         data_.has_new_goal = true;
         data_.has_active_goal = true;
-        state_manager_.setPendingState(RampDown, Running);
+        state_manager_.setPendingState(RampDown, SubStates::Running);
     } break;
 
-    case Running: {
-        if (motion_step_.interpolationDurationReached()) { state_manager_.setPendingState(RampDown, Finished); }
+    case SubStates::Running: {
+        if (motion_step_.interpolationDurationReached()) {
+            state_manager_.setPendingState(RampDown, SubStates::Finished);
+        }
     } break;
 
-    case Finished: {
+    case SubStates::Finished: {
         // Handle the duration scale factor update event.
         if (data_.pending_events.do_duration_factor_update) {
             motion_step_.data.duration_factor = data_.pending_events.duration_factor;
@@ -763,17 +769,19 @@ void TrajectoryMotion::processRampDownState() {
                 data_.pending_events.do_stop = false;
                 data_.pending_events.do_resume = false;
 
-                if (data_.pending_events.do_static_goal_start) { state_manager_.setPendingState(StaticGoal, None); }
+                if (data_.pending_events.do_static_goal_start) {
+                    state_manager_.setPendingState(StaticGoal, SubStates::None);
+                }
                 else {
                     updateNormalGoal();
-                    state_manager_.setPendingState(Normal, Running);
+                    state_manager_.setPendingState(Normal, SubStates::Running);
                 }
             }
         }
         else {
             data_.pending_events.do_ramp_down = false;
             updateNormalGoal();
-            state_manager_.setPendingState(Normal, Running);
+            state_manager_.setPendingState(Normal, SubStates::Running);
         }
     } break;
     }
@@ -781,7 +789,7 @@ void TrajectoryMotion::processRampDownState() {
 
 void TrajectoryMotion::processStaticGoalState() {
     switch (state_manager_.getSubState()) {
-    case None: {
+    case SubStates::None: {
         // Store any currently executing trajectory into the queue.
         if (trajectories_.p_current) {
             trajectories_.primary_queue.push_front(trajectories_.p_current);
@@ -789,10 +797,10 @@ void TrajectoryMotion::processStaticGoalState() {
         }
 
         data_.has_active_goal = false;
-        state_manager_.setPendingState(StaticGoal, Running);
+        state_manager_.setPendingState(StaticGoal, SubStates::Running);
     } break;
 
-    case Running: {
+    case SubStates::Running: {
         // Update the internal goal, with the new static goal.
         if (data_.pending_events.do_static_position_goal_update && !data_.pending_events.do_ramp_down) {
             motion_step_.prepareStaticGoal(
@@ -813,11 +821,13 @@ void TrajectoryMotion::processStaticGoalState() {
             data_.has_active_goal = true;
         }
 
-        if (data_.pending_events.do_static_goal_finish) { state_manager_.setPendingState(StaticGoal, Finished); }
-        else if (data_.pending_events.do_ramp_down) { state_manager_.setPendingState(RampDown, None); }
+        if (data_.pending_events.do_static_goal_finish) {
+            state_manager_.setPendingState(StaticGoal, SubStates::Finished);
+        }
+        else if (data_.pending_events.do_ramp_down) { state_manager_.setPendingState(RampDown, SubStates::None); }
     } break;
 
-    case Finished: {
+    case SubStates::Finished: {
         // Clear the static goal event flags.
         data_.pending_events.do_static_goal_start = false;
         data_.pending_events.do_static_goal_finish = false;
@@ -827,7 +837,7 @@ void TrajectoryMotion::processStaticGoalState() {
         // Perform a ramp down stop.
         data_.pending_events.do_ramp_down = true;
         data_.pending_events.do_stop = true;
-        state_manager_.setPendingState(RampDown, None);
+        state_manager_.setPendingState(RampDown, SubStates::None);
     } break;
     }
 }
@@ -876,7 +886,7 @@ bool TrajectoryMotion::addTrajectory(const trajectory::TrajectoryGoal& trajector
     std::lock_guard<std::mutex> data_lock(data_.mutex);
     std::lock_guard<std::mutex> trajectory_lock(trajectories_.mutex);
 
-    bool accepted = state_manager_.verifyState(Normal, Running);
+    bool accepted = state_manager_.verifyState(Normal, SubStates::Running);
 
     if (accepted) {
         if (override_trajectories) {
@@ -899,7 +909,7 @@ bool TrajectoryMotion::addTrajectory(const trajectory::TrajectoryGoal& trajector
 bool TrajectoryMotion::stopTrajectory(const bool discard_trajectories) {
     std::lock_guard<std::mutex> lock(data_.mutex);
 
-    bool accepted = state_manager_.verifyState(Normal, Running);
+    bool accepted = state_manager_.verifyState(Normal, SubStates::Running);
 
     if (accepted) {
         data_.pending_events.do_ramp_down = true;
@@ -913,7 +923,7 @@ bool TrajectoryMotion::stopTrajectory(const bool discard_trajectories) {
 bool TrajectoryMotion::resumeTrajectory() {
     std::lock_guard<std::mutex> lock(data_.mutex);
 
-    bool accepted = state_manager_.verifyState(RampDown, Finished);
+    bool accepted = state_manager_.verifyState(RampDown, SubStates::Finished);
 
     if (accepted) { data_.pending_events.do_resume = true; }
 
@@ -923,7 +933,7 @@ bool TrajectoryMotion::resumeTrajectory() {
 bool TrajectoryMotion::updateDurationFactor(double factor) {
     std::lock_guard<std::mutex> lock(data_.mutex);
 
-    bool accepted = state_manager_.verifyState(Normal, Running);
+    bool accepted = state_manager_.verifyState(Normal, SubStates::Running);
 
     if (accepted) {
         data_.pending_events.do_ramp_down = true;
@@ -937,7 +947,7 @@ bool TrajectoryMotion::updateDurationFactor(double factor) {
 bool TrajectoryMotion::startStaticGoal(const bool discard_trajectories) {
     std::lock_guard<std::mutex> lock(data_.mutex);
 
-    bool accepted = state_manager_.verifyState(Normal, Running);
+    bool accepted = state_manager_.verifyState(Normal, SubStates::Running);
 
     if (accepted) {
         data_.pending_events.do_ramp_down = true;
@@ -953,7 +963,7 @@ bool TrajectoryMotion::startStaticGoal(const bool discard_trajectories) {
 bool TrajectoryMotion::setStaticGoal(const StaticPositionGoal& position_goal, const bool fast_transition) {
     std::lock_guard<std::mutex> lock(data_.mutex);
 
-    bool accepted = state_manager_.verifyState(StaticGoal, Running);
+    bool accepted = state_manager_.verifyState(StaticGoal, SubStates::Running);
 
     if (accepted) {
         data_.pending_events.do_ramp_down = !fast_transition;
@@ -971,7 +981,7 @@ bool TrajectoryMotion::setStaticGoal(const StaticPositionGoal& position_goal, co
 bool TrajectoryMotion::setStaticGoal(const StaticVelocityGoal& velocity_goal, const bool fast_transition) {
     std::lock_guard<std::mutex> lock(data_.mutex);
 
-    bool accepted = state_manager_.verifyState(StaticGoal, Running);
+    bool accepted = state_manager_.verifyState(StaticGoal, SubStates::Running);
 
     if (accepted) {
         data_.pending_events.do_ramp_down = !fast_transition;
@@ -989,7 +999,7 @@ bool TrajectoryMotion::setStaticGoal(const StaticVelocityGoal& velocity_goal, co
 bool TrajectoryMotion::finishStaticGoal(const bool resume) {
     std::lock_guard<std::mutex> lock(data_.mutex);
 
-    bool accepted = state_manager_.verifyState(StaticGoal, Running);
+    bool accepted = state_manager_.verifyState(StaticGoal, SubStates::Running);
 
     if (accepted) {
         data_.pending_events.do_static_goal_finish = true;
