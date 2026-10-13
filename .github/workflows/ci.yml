@@ -137,11 +137,19 @@ jobs:
         shell: cmd
         run: ctest --preset ${{ matrix.base }}-test -C ${{ matrix.config }} --output-junit test-results.xml
 
+      # The runtime artifacts of a configuration share one directory, so the benchmark runs from
+      # the same place the library does and the loader finds the DLL beside the executable.
       - name: smoke the benchmark
         shell: cmd
         run: >
-          build\${{ matrix.base }}\benchmark\${{ matrix.config }}\inproc_lat.exe
-          100 1000
+          build\${{ matrix.base }}\bin\${{ matrix.config }}\ba7lya.abb.robot.egm_benchmark.exe
+          --benchmark_min_time=0.01s
+
+      # The interpolator example needs no communication, so it is safe to run here; the controller
+      # example waits for a real robot controller and is therefore not part of the smoke run.
+      - name: smoke the examples
+        shell: cmd
+        run: build\${{ matrix.base }}\bin\${{ matrix.config }}\ba7lya.abb.robot.egm_example_interpolator.exe
 
       - name: upload test results
         if: always()
@@ -204,7 +212,12 @@ jobs:
         run: ctest --preset linux-gcc-x64-test -C ${{ matrix.config }} --output-junit test-results.xml
 
       - name: smoke the benchmark
-        run: ./build/linux-gcc-x64/benchmark/${{ matrix.config }}/inproc_lat 100 1000
+        run: ./build/linux-gcc-x64/bin/${{ matrix.config }}/ba7lya.abb.robot.egm_benchmark --benchmark_min_time=0.01s
+
+      # The interpolator example needs no communication, so it is safe to run here; the controller
+      # example waits for a real robot controller and is therefore not part of the smoke run.
+      - name: smoke the examples
+        run: ./build/linux-gcc-x64/bin/${{ matrix.config }}/ba7lya.abb.robot.egm_example_interpolator
 
       - name: upload test results
         if: always()
@@ -265,7 +278,12 @@ jobs:
         run: ctest --preset linux-clang-x64-test -C ${{ matrix.config }} --output-junit test-results.xml
 
       - name: smoke the benchmark
-        run: ./build/linux-clang-x64/benchmark/${{ matrix.config }}/inproc_lat 100 1000
+        run: ./build/linux-clang-x64/bin/${{ matrix.config }}/ba7lya.abb.robot.egm_benchmark --benchmark_min_time=0.01s
+
+      # The interpolator example needs no communication, so it is safe to run here; the controller
+      # example waits for a real robot controller and is therefore not part of the smoke run.
+      - name: smoke the examples
+        run: ./build/linux-clang-x64/bin/${{ matrix.config }}/ba7lya.abb.robot.egm_example_interpolator
 
       - name: upload test results
         if: always()
