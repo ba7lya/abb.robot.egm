@@ -10,12 +10,12 @@
 
 #define _USE_MATH_DEFINES
 
-#include "ba7lya/abb/robot/egm/base_interface.hxx"
+#include "base_interface.hxx"
 
 #include <cmath>
 #include <sstream>
 
-#include "ba7lya/abb/robot/egm/common_auxiliary.hxx"
+#include "common_auxiliary.hxx"
 
 namespace ba7lya::abb::robot::egm {
 

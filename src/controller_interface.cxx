@@ -8,11 +8,11 @@
 /// @copyright Copyright (c) 2026
 ///
 
-#include "ba7lya/abb/robot/egm/controller_interface.hxx"
+#include "controller_interface.hxx"
 
 #include <sstream>
 
-#include "ba7lya/abb/robot/egm/common_auxiliary.hxx"
+#include "common_auxiliary.hxx"
 
 namespace ba7lya::abb::robot::egm {
 

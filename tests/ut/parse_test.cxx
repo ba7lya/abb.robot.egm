@@ -11,8 +11,8 @@
 #include <cmath>
 #include <gtest/gtest.h>
 
-#include "ba7lya/abb/robot/egm/common.hxx"
-#include "ba7lya/abb/robot/egm/common_auxiliary.hxx"
+#include "common.hxx"
+#include "common_auxiliary.hxx"
 #include "egm.pb.h"
 #include "egm_wrapper.pb.h"
 

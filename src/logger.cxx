@@ -8,11 +8,11 @@
 /// @copyright Copyright (c) 2026
 ///
 
-#include "ba7lya/abb/robot/egm/logger.hxx"
+#include "logger.hxx"
 
 #include <sstream>
 
-#include "ba7lya/abb/robot/egm/common.hxx"
+#include "common.hxx"
 
 namespace ba7lya::abb::robot::egm {
 

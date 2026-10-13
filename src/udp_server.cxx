@@ -8,7 +8,7 @@
 /// @copyright Copyright (c) 2026
 ///
 
-#include "ba7lya/abb/robot/egm/udp_server.hxx"
+#include "udp_server.hxx"
 
 #include <functional>
 

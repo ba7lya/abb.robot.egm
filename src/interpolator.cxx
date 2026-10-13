@@ -10,11 +10,11 @@
 
 #define _USE_MATH_DEFINES
 
-#include "ba7lya/abb/robot/egm/interpolator.hxx"
+#include "interpolator.hxx"
 
 #include <cmath>
 
-#include "ba7lya/abb/robot/egm/common_auxiliary.hxx"
+#include "common_auxiliary.hxx"
 
 namespace ba7lya::abb::robot::egm {
 

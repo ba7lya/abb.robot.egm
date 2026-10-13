@@ -59,6 +59,18 @@ endif()
 
 # --- target ---
 set(
+    PUBLIC_HEADERS
+        include/base_interface.hxx
+        include/common.hxx
+        include/common_auxiliary.hxx
+        include/controller_interface.hxx
+        include/interpolator.hxx
+        include/logger.hxx
+        include/trajectory_interface.hxx
+        include/udp_server.hxx
+)
+
+set(
     SRC_FILES
         src/base_interface.cxx
         src/common_auxiliary.cxx
@@ -74,8 +86,8 @@ add_library(${PROJECT_NAME} ${SRC_FILES})
 add_library(ba7lya::abb::robot::egm ALIAS ${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME egm)
 
-# The public headers live under include/ba7lya/abb/robot/egm/ and include the generated protobuf headers as well
-# as the export header by bare filename, so those are generated/installed alongside them.
+# The public headers include the generated protobuf headers as well as the export header by bare filename,
+# so those are generated alongside them in the build directory and installed next to them (see below).
 generate_export_header(${PROJECT_NAME} BASE_NAME abb_egm EXPORT_FILE_NAME export.hxx)
 
 # Only the build directory is needed for the generated protobuf headers and the export header; protobuf's own
@@ -108,17 +120,19 @@ if(MSVC)
 endif()
 
 # --- install ---
-install(
-    DIRECTORY include/
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
-
+# The source tree keeps the public headers flat in include/ and they include one another by bare filename;
+# a quoted include searches the including file's own directory first, so the headers themselves need no
+# rewriting for the nested layout. They are installed to <prefix>/include/<author>/<package>/ because that
+# is the only spelling that stays unambiguous once several ba7lya packages are installed into one prefix.
+# The generated protobuf headers and the export header go to the same directory, as the public headers
+# include them by bare filename as well.
 install(
     FILES
+        ${PUBLIC_HEADERS}
         ${EgmProtoFiles}
         ${EgmProtoHeaders}
         "${CMAKE_CURRENT_BINARY_DIR}/export.hxx"
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ba7lya/abb/robot/egm
 )
 
 install(
